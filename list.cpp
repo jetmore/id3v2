@@ -26,7 +26,7 @@
 #include "frametable.h"
 #include "genre.h"
 
-char *GetDescription(const ID3_FrameID eFrameID)
+const char *GetDescription(const ID3_FrameID eFrameID)
 {
   for(int ii = 0; ii < frameTableCount; ii++ )
   {
