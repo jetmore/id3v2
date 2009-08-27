@@ -3,7 +3,7 @@ all: id3v2
 VERSION=0.1.11
 
 PREFIX=	/opt/local
-CXXFLAGS+=	-I${PREFIX}/include/ -DVERSION="\"${VERSION}\"" #-DSORT_RUNTIME
+CXXFLAGS+=	-Wall -I${PREFIX}/include/ -DVERSION="\"${VERSION}\"" #-DSORT_RUNTIME
 LDFLAGS+=	-L${PREFIX}/lib/ 
 
 id3v2:	convert.o list.o id3v2.o genre.o

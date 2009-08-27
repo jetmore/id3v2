@@ -377,13 +377,13 @@ int PrintID3v1Tag(char *sFileName)
   return 0;
 }
 
-void ListTag(int argc, char *argv[], int optind, int rfc822)
+void ListTag(int argc, char *argv[], int optind)
 {
   bool id3v1_tag = false;
   bool id3v2_tag = false;
   int ret = 0;
 
-  for (size_t nIndex = optind; nIndex < argc; nIndex++)
+  for (int nIndex = optind; nIndex < argc; nIndex++)
   {
     ID3_Tag myTag;
 
