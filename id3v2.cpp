@@ -553,7 +553,8 @@ int main( int argc, char *argv[])
             if ((strcmp(tmp_desc, tmp_my_desc) == 0) &&
                 (strcmp(tmp_lang, tmp_my_lang) == 0)) 
             {
-              myTag.RemoveFrame(pFrame);
+              ID3_Frame * todel = myTag.RemoveFrame(pFrame);
+              delete todel;
               if (pFrame == pFirstFrame) 
               {
                 pFirstFrame = NULL;
@@ -567,7 +568,9 @@ int main( int argc, char *argv[])
             // get the next frame until it wraps around
           } while ((pFrame = myTag.Find(frameList[ii].id)) != pFirstFrame);
           
-          if (strlen(ID3_GetString(myFrame, ID3FN_TEXT)) > 0) {
+          char * temp = ID3_GetString(myFrame, ID3FN_TEXT);
+          if (strlen(temp) > 0) {
+            delete[] temp;
             myTag.AttachFrame(myFrame);
           }
           
