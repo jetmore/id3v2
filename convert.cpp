@@ -176,7 +176,8 @@ void DeleteFrame(int argc, char *argv[], int optind, char * frame)
       ID3_Frame * f = myTag.Find(fid);
       
       while (f != NULL){
-	myTag.RemoveFrame(f);
+        ID3_Frame * todel =  myTag.RemoveFrame(f);
+        delete todel;
         f = myTag.Find(fid);
       }
 
