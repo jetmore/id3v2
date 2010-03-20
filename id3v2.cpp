@@ -36,7 +36,6 @@ void PrintUsage(char *sName)
   std::cout << "  -L,  --list-genres        Lists all id3v1 genres" << std::endl;
   std::cout << "  -v,  --version            Display version information and exit" << std::endl;
   std::cout << "  -l,  --list               Lists the tag(s) on the file(s)" << std::endl;
-  std::cout << "  -R,  --list-rfc822        Lists using an rfc822-style format for output" << std::endl;
   std::cout << "  -d,  --delete-v2          Deletes id3v2 tags" << std::endl;
   std::cout << "  -s,  --delete-v1          Deletes id3v1 tags" << std::endl;
   std::cout << "  -D,  --delete-all         Deletes both id3v1 and id3v2 tags" << std::endl;
@@ -64,7 +63,6 @@ void PrintUsage(char *sName)
 
 void PrintVersion(char *sName)
 {
-  size_t nIndex;
   std::cout << sName << " " << VERSION << std::endl;
   std::cout << "Uses " << ID3LIB_FULL_NAME << std::endl << std::endl;
 
@@ -73,7 +71,7 @@ void PrintVersion(char *sName)
 }
 
 
-extern void ListTag(int argc, char *argv[], int optind, int rfc822);
+extern void ListTag(int argc, char *argv[], int optind);
 extern void PrintFrameHelp(char *sName);
 extern void PrintGenreList();
 
@@ -117,8 +115,6 @@ int main( int argc, char *argv[])
 
     // list / remove / convert
       { "list",   no_argument,        &iLongOpt, 'l' },
-      { "list-rfc822",   
-                   no_argument,       &iLongOpt, 'R' },
       { "delete-v2",  no_argument,    &iLongOpt, 'd' },
       { "delete-v1",  
                    no_argument,       &iLongOpt, 's' },
@@ -213,7 +209,7 @@ int main( int argc, char *argv[])
       { "WXXX",    required_argument, &optFrameID, ID3FID_WWWUSER },
       { 0, 0, 0, 0 }
     };
-    iOpt = getopt_long (argc, argv, "12hfLvlRdsDCr:a:A:t:c:g:y:T:",
+    iOpt = getopt_long (argc, argv, "12hfLvldsDCr:a:A:t:c:g:y:T:",
                         long_options, &option_index);
 
     if (iOpt == -1  && argCounter == 0)
@@ -247,9 +243,7 @@ int main( int argc, char *argv[])
       case 'v': PrintVersion(argv[0]);  exit (0);
 
     // listing / remove / convert -- see list.cpp and convert.cpp
-      case 'l': ListTag(argc, argv, optind, 0);    
-                                        exit (0);
-      case 'R': ListTag(argc, argv, optind, 1);    
+      case 'l': ListTag(argc, argv, optind);    
                                         exit (0);
       case 'd': DeleteTag(argc, argv, optind, 2);    
                                         exit (0);
@@ -329,7 +323,7 @@ int main( int argc, char *argv[])
     exit(1);
   }
   
-  for (size_t nIndex = optind; (unsigned int) nIndex < argc; nIndex++)
+  for (int nIndex = optind; nIndex < argc; nIndex++)
   {
     ID3_Tag myTag;
     struct stat filestat;
@@ -735,7 +729,7 @@ int main( int argc, char *argv[])
       }
     }  // steping thru frames
    
-    luint nTags = myTag.Update(UpdFlags);
+    myTag.Update(UpdFlags);
 
     /* update file with old mode */
     if (chmod(argv[nIndex], filestat.st_mode)) 

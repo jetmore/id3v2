@@ -55,7 +55,6 @@ int GetNumFromGenre(const char *genre)
 {
     int a=0;
     int b=GetGenreCount()-1;
-    int i;
 
     while(a <= b) {
         const int i = (a+b)/2;

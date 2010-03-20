@@ -95,7 +95,7 @@ void DeleteTag(int argc, char *argv[], int optind, int whichTags)
 
     FILE * fp;
     
-    for (size_t nIndex = optind; nIndex < argc; nIndex++)
+    for (int nIndex = optind; nIndex < argc; nIndex++)
     {
       /* cludgy to check if we have the proper perms */
       fp = fopen(argv[nIndex], "r+");
@@ -140,7 +140,7 @@ void DeleteTag(int argc, char *argv[], int optind, int whichTags)
 
 void ConvertTag(int argc, char *argv[], int optind)
 {
-    for (size_t nIndex = optind; nIndex < argc; nIndex++)
+    for (int nIndex = optind; nIndex < argc; nIndex++)
     {
       ID3_Tag myTag;
 
@@ -171,7 +171,7 @@ void ConvertTag(int argc, char *argv[], int optind)
 
 void DeleteFrame(int argc, char *argv[], int optind, char * frame)
 {
-    for (size_t nIndex = optind; nIndex < argc; nIndex++)
+    for (int nIndex = optind; nIndex < argc; nIndex++)
     {
       ID3_Tag myTag;
 
