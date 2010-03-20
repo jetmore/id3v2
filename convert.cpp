@@ -12,7 +12,6 @@ ID3_FrameID GetFrameID(char * abr)
    std::cerr << "Frame ID must have length 4" << std::endl; 
    return ID3FID_NOFRAME;
  }
- if (strncmp("COMM",abr,4) == 0) return ID3FID_COMMENT;
  if (strncmp("AENC",abr,4) == 0) return ID3FID_AUDIOCRYPTO;
  if (strncmp("APIC",abr,4) == 0) return ID3FID_PICTURE;
  if (strncmp("COMM",abr,4) == 0) return ID3FID_COMMENT;
