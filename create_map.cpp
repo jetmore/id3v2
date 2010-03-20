@@ -28,7 +28,7 @@ int CompareGenres(const void *a, const void *b)
 }
 #endif  // SORT_RUNTIME
 
-void main()
+int main(int, char**)
 {
     int i;
     for (i=0; i<GetGenreCount(); ++i)
@@ -36,8 +36,8 @@ void main()
 
     qsort(genre_map, GetGenreCount(), sizeof(int), &CompareGenres);
 
-    cout << "char *genre_table[] = {" << genre_map[0];
+    std::cout << "int genre_map[] = {" << genre_map[0];
     for (i=1; i<GetGenreCount(); ++i)
-        cout << ", " << genre_map[i];
-    cout << "};" << std::endl;
+        std::cout << ", " << genre_map[i];
+    std::cout << "};" << std::endl;
 }

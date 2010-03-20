@@ -6,11 +6,9 @@ id3v2 \-  Adds/Modifies/Removes/Views id3v2 tags, converts/lists id3v1 tags
 .RB [
 .I OPTION
 .RB ]
-...
 .RB [
 .I FILE
 .RB ]
-...
 .br
 .SH OPTIONS
 .TP
@@ -64,6 +62,15 @@ Set the year
 .TP
 .B \-T, \-\-track num/num
 Set the track number/(optional) total tracks
+
+.SH NOTE
+You can set the value for any id3v2 frame by using '--' and then frame id
+.TP
+For example:
+
+.B id3v2 --TIT3 "Monkey!" file.mp3
+.TP
+would set the "Subtitle/Description" frame to "Monkey!".
 
 .SH SEE ALSO
 id3tag(1), id3info(1), id3convert(1)

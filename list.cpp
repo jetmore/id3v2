@@ -26,7 +26,7 @@
 #include "frametable.h"
 #include "genre.h"
 
-char *GetDescription(const ID3_FrameID eFrameID)
+const char *GetDescription(const ID3_FrameID eFrameID)
 {
   for(int ii = 0; ii < frameTableCount; ii++ )
   {
@@ -373,10 +373,14 @@ int PrintID3v1Tag(char *sFileName)
 
 void ListTag(int argc, char *argv[], int optind, int rfc822)
 {
-  int ret;
+  int ret = 0;
+  bool id3v1_tag;
+  bool id3v2_tag;
+
   for (size_t nIndex = optind; nIndex < argc; nIndex++)
   {
-    bool tags = false;
+    id3v1_tag = false;
+    id3v2_tag = false;
     ID3_Tag myTag;
 
     if (!rfc822)
@@ -388,14 +392,20 @@ void ListTag(int argc, char *argv[], int optind, int rfc822)
       }
       else if(ret == 0)
       {
-        tags = true;
+        id3v1_tag = true;
       }
     }
     myTag.Link(argv[nIndex], ID3TT_ID3V2);
     if(!PrintInformation(argv[nIndex],myTag,rfc822))
-      tags = true;
-    if(!tags)
+      id3v2_tag = true;
+    if(!id3v1_tag && !id3v2_tag)
       std::cout << argv[nIndex] << ": No ID3 tag" << std::endl;
+    else {
+      if (!id3v1_tag)
+        std::cout << argv[nIndex] << ": No ID3v1 tag" << std::endl;
+      if (!id3v2_tag)
+        std::cout << argv[nIndex] << ": No ID3v2 tag" << std::endl;
+    }
   }
 
   return;
