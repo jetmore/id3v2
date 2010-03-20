@@ -415,7 +415,8 @@ int main( int argc, char *argv[])
         {
           if (pFrame != NULL) 
           {
-            myTag.RemoveFrame(pFrame);
+            ID3_Frame * todel = myTag.RemoveFrame(pFrame);
+            delete todel;
           }
           if (strlen(frameList[ii].data) > 0) {
             myFrame->Field(ID3FN_TEXT) = frameList[ii].data;
@@ -427,7 +428,8 @@ int main( int argc, char *argv[])
         {
           if (pFrame != NULL) 
           {
-            myTag.RemoveFrame(pFrame);
+            ID3_Frame * todel = myTag.RemoveFrame(pFrame);
+            delete todel;
           }
           if (strlen(frameList[ii].data) > 0) {
             myFrame->Field(ID3FN_TEXTENC) = ID3TE_ASCII;
@@ -469,7 +471,8 @@ int main( int argc, char *argv[])
             }
             else
             {
-              myTag.RemoveFrame(pFrame);
+            ID3_Frame * todel = myTag.RemoveFrame(pFrame);
+            delete todel;
             }
           }
           
@@ -483,7 +486,8 @@ int main( int argc, char *argv[])
         {
           if (pFrame != NULL) 
           {
-            myTag.RemoveFrame(pFrame);
+            ID3_Frame * todel = myTag.RemoveFrame(pFrame);
+            delete todel;
           }
 
           // split the string at the ':' remember if no : then leave
@@ -593,8 +597,10 @@ int main( int argc, char *argv[])
           if (pFrame != NULL) 
           {
             char *sURL = ID3_GetString(pFrame, ID3FN_URL);
-            if (strcmp(frameList[ii].data, sURL) == 0)
-              myTag.RemoveFrame(pFrame);  
+            if (strcmp(frameList[ii].data, sURL) == 0) {
+              ID3_Frame * todel = myTag.RemoveFrame(pFrame);
+              delete todel;  
+            }
           }
 
           if (strlen(frameList[ii].data) > 0) {
