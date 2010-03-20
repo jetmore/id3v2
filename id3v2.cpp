@@ -42,12 +42,13 @@ void PrintUsage(char *sName)
   std::cout << "  -C,  --convert            Converts id3v1 tag to id3v2" << std::endl;
   std::cout << "  -1,  --id3v1-only         Writes only id3v1 tag" << std::endl;
   std::cout << "  -2,  --id3v2-only         Writes only id3v2 tag" << std::endl;
-  std::cout << "  -a,  --artist  \"ARTIST\"   Set the artist information" << std::endl;
-  std::cout << "  -A,  --album   \"ALBUM\"    Set the album title information" << std::endl;
-  std::cout << "  -t,  --song    \"SONG\"     Set the song title information" << std::endl;
-  std::cout << "  -c,  --comment \"DESCRIPTION\":\"COMMENT\":\"LANGUAGE\"  "<< std::endl
+  std::cout << "  -r,  --remove-frame \"FRAMEID\"   Removes the specified id3v2 frame" << std::endl;
+  std::cout << "  -a,  --artist       \"ARTIST\"    Set the artist information" << std::endl;
+  std::cout << "  -A,  --album        \"ALBUM\"     Set the album title information" << std::endl;
+  std::cout << "  -t,  --song         \"SONG\"      Set the song title information" << std::endl;
+  std::cout << "  -c,  --comment      \"DESCRIPTION\":\"COMMENT\":\"LANGUAGE\"  "<< std::endl
        << "                            Set the comment information (both" << std::endl
-       << "                             description and language optional)" << std::endl;    
+       << "                            description and language optional)" << std::endl;    
   std::cout << "  -g,  --genre   num        Set the genre number" << std::endl;
   std::cout << "  -y,  --year    num        Set the year" << std::endl;
   std::cout << "  -T,  --track   num/num    Set the track number/(optional) total tracks" << std::endl;
@@ -77,6 +78,7 @@ extern void PrintGenreList();
 
 extern void DeleteTag(int argc, char *argv[], int optind, int whichTags); 
 extern void ConvertTag(int argc, char *argv[], int optind);
+extern void DeleteFrame(int argc, char *argv[], int optind, char * frame);
 
 #ifdef SORT_RUNTIME
 extern void InitGenres();
@@ -124,6 +126,7 @@ int main( int argc, char *argv[])
       { "convert", no_argument,       &iLongOpt, 'C' },
       { "id3v1-only", no_argument,       &iLongOpt, '1' },
       { "id3v2-only", no_argument,       &iLongOpt, '2' },
+      { "remove-frame", required_argument,  &iLongOpt, 'r' },
 
     // infomation to tag
       { "artist",  required_argument, &iLongOpt, 'a' },
@@ -209,7 +212,7 @@ int main( int argc, char *argv[])
       { "WXXX",    required_argument, &optFrameID, ID3FID_WWWUSER },
       { 0, 0, 0, 0 }
     };
-    iOpt = getopt_long (argc, argv, "12hfLvlRdsDCa:A:t:c:g:y:T:",
+    iOpt = getopt_long (argc, argv, "12hfLvlRdsDCr:a:A:t:c:g:y:T:",
                         long_options, &option_index);
 
     if (iOpt == -1  && argCounter == 0)
@@ -237,6 +240,7 @@ int main( int argc, char *argv[])
                 break;
       case '?': 
       case 'h': PrintUsage(argv[0]);    exit (0);
+      case 'r': DeleteFrame(argc, argv, optind, optarg);    exit (0);
       case 'f': PrintFrameHelp(argv[0]);exit (0);
       case 'L': PrintGenreList();       exit (0);
       case 'v': PrintVersion(argv[0]);  exit (0);
