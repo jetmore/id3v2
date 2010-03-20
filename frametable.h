@@ -24,9 +24,9 @@
 #include <id3/globals.h>
 
 struct frameTbl {
-  char *frameName;
+  const char *frameName;
   enum ID3_FrameID frameID;
-  char *frameLongName;
+  const char *frameLongName;
 }; 
 
 static struct frameTbl frameTable[] = {
