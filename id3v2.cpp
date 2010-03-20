@@ -354,7 +354,7 @@ int main( int argc, char *argv[])
     fclose(fp);
 
     size_t ret;
-    ret = myTag.Link(argv[nIndex] /*, ID3TT_ID3V2 */);
+    ret = myTag.Link(argv[nIndex], UpdFlags);
 
     // loop thru the frames we need to add/modify
     for (ii = 0; ii < frameCounter; ii++) 
