@@ -311,6 +311,7 @@ int PrintInformation(char *sFileName, const ID3_Tag &myTag, int rfc822)
       }
     }
   }
+  delete Iter;
   if(firstLine)
     return 1;
   
