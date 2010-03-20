@@ -383,7 +383,7 @@ int PrintID3v1Tag(char *sFileName)
   return 0;
 }
 
-void ListTag(int argc, char *argv[], int optind)
+void ListTag(int argc, char *argv[], int optind, bool rfc822)
 {
   int ret = 0;
   bool id3v1_tag;
