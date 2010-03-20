@@ -25,6 +25,7 @@
 /* Write both tags by default */
 flags_t UpdFlags = ID3TT_ALL;
 
+
 void PrintUsage(char *sName)
 {
   std::cout << "Usage: " << sName << " [OPTION]... [FILE]..." << std::endl;
@@ -422,6 +423,31 @@ int main( int argc, char *argv[])
             myTag.AttachFrame(myFrame);
           }
           break;
+        }
+        case ID3FID_TERMSOFUSE:
+        {
+          if (pFrame != NULL) 
+          {
+            myTag.RemoveFrame(pFrame);
+          }
+          if (strlen(frameList[ii].data) > 0) {
+            myFrame->Field(ID3FN_TEXTENC) = ID3TE_ASCII;
+            char *text;
+            text = strchr(frameList[ii].data, ':');
+            if (text == NULL) 
+            {
+              myFrame->Field(ID3FN_TEXT) = frameList[ii].data;
+            } else {
+              *text = '\0';
+              text++;
+              myFrame->Field(ID3FN_LANGUAGE) = frameList[ii].data;
+              myFrame->Field(ID3FN_TEXT) = text;
+            }
+            if (strlen(ID3_GetString(myFrame, ID3FN_TEXT)) > 0) {
+              myTag.AttachFrame(myFrame);
+            }
+            break;
+          }
         }
         case ID3FID_TRACKNUM:
         {

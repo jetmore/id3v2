@@ -150,6 +150,17 @@ int PrintInformation(char *sFileName, const ID3_Tag &myTag, int rfc822)
           delete [] sDesc;
           break;
         }
+        case ID3FID_TERMSOFUSE:
+        {
+          char 
+            *sText = ID3_GetString(myFrame, ID3FN_TEXT), 
+            *sLang = ID3_GetString(myFrame, ID3FN_LANGUAGE);
+          std::cout << "[" << sLang << "]: "
+               << sText << std::endl;
+          delete [] sText;
+          delete [] sLang;
+          break;
+        }
         case ID3FID_COMMENT:
         case ID3FID_UNSYNCEDLYRICS:
         {
