@@ -443,7 +443,9 @@ int main( int argc, char *argv[])
               myFrame->Field(ID3FN_LANGUAGE) = frameList[ii].data;
               myFrame->Field(ID3FN_TEXT) = text;
             }
-            if (strlen(ID3_GetString(myFrame, ID3FN_TEXT)) > 0) {
+            char * test = ID3_GetString(myFrame, ID3FN_TEXT);
+            if (strlen(test) > 0) {
+              delete[] test;
               myTag.AttachFrame(myFrame);
             }
             break;
