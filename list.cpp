@@ -18,290 +18,251 @@
 
 #include <iostream>
 #include <cstring>
-#include <id3/tag.h>
 #include <getopt.h>
 #include <cstdlib>
 #include <cstdio>
-#include <id3/misc_support.h>
 #include "frametable.h"
-#include "genre.h"
 
-char *GetDescription(const ID3_FrameID eFrameID)
+#include <iomanip>
+
+#include <taglib/taglib.h>
+#include <taglib/id3v1genres.h>
+#include <taglib/mpegfile.h>
+#include <taglib/id3v2tag.h>
+
+#include <taglib/urllinkframe.h>
+#include <taglib/unknownframe.h>
+#include <taglib/privateframe.h>
+#include <taglib/commentsframe.h>
+#include <taglib/popularimeterframe.h>
+#include <taglib/attachedpictureframe.h>
+#include <taglib/textidentificationframe.h>
+#include <taglib/unsynchronizedlyricsframe.h>
+#include <taglib/generalencapsulatedobjectframe.h>
+
+using namespace TagLib;
+using namespace ID3v2;
+
+const char *GetDescription(ByteVector frameID)
 {
   for(int ii = 0; ii < frameTableCount; ii++ )
   {
-    if (frameTable[ii].frameID == eFrameID)
+    if (ByteVector(frameTable[ii].frameName) == frameID)
       return frameTable[ii].frameLongName;
   }
-  return NULL;
+  return "";
 }
 
 void PrintFrameHelp(char *sName)
 {
+    // TODO: don't show frames with ID3FID_NOFRAME
     for(int ii = 0; ii < frameTableCount - 1; ii++ )
     {
-      std::cout << "    --" << frameTable[ii].frameName << "    " 
-           << frameTable[ii].frameLongName << std::endl;
+      cout << "    --" << frameTable[ii].frameName << "    " 
+           << frameTable[ii].frameLongName << endl;
     }
     return;
 }
 
 void PrintGenreList()
 {
-  for (int ii = 0; ii < GetGenreCount(); ii++)
-    printf("%3d: %s\n", ii, GetGenreFromNum(ii));
+  StringList genres = ID3v1::genreList();
+  List<String>::Iterator iter;
+
+  int index;
+  String genre;
+
+  for (iter=genres.begin(); iter != genres.end(); ++iter) {
+    genre = *iter;
+    index = ID3v1::genreIndex(genre);
+    cout << setw(3) << index << ": " << genre << endl;
+  }
 }
 
-int PrintInformation(char *sFileName, const ID3_Tag &myTag, int rfc822)
-{
-  bool firstLine = true;
-  const ID3_Frame * myFrame;
-  ID3_Tag::ConstIterator *Iter=myTag.CreateIterator();
-  for (size_t nFrames = 0; nFrames < myTag.NumFrames(); nFrames++)
-  {
-    myFrame = Iter->GetNext();
+const void showFrame(const CommentsFrame *frame) {
+  cout << "(" << frame->description() << ")[" << frame->language() << "]: " <<
+	  frame->text();
+}
 
-    if(firstLine) {
-      if (rfc822)
-        std::cout << "\nFilename: " << sFileName << std::endl;
-      else
-        std::cout << "id3v2 tag info for " << sFileName << ":" << std::endl;
-      firstLine = false;
-    }
+const void showFrame(const UnsynchronizedLyricsFrame *frame) {
+  cout << "(" << frame->description() << ")[" << frame->language() << "]: " <<
+	  frame->text();
+}
 
-    if (NULL != myFrame)
-    { 
-      const char* desc = myFrame->GetDescription();
-      if (!desc) desc = "";
-      if (rfc822)
-        std::cout << myFrame->GetTextID() << ": ";
-      else
-        std::cout << myFrame->GetTextID() << " (" << desc << "): ";
-      ID3_FrameID eFrameID = myFrame->GetID();
+const void showFrame(const UrlLinkFrame *frame) {
+  cout << frame->url();
+}
 
-      switch (eFrameID)
-      {
-        case ID3FID_ALBUM:
-        case ID3FID_BPM:
-        case ID3FID_COMPOSER:
-        case ID3FID_COPYRIGHT:
-        case ID3FID_DATE:
-        case ID3FID_PLAYLISTDELAY:
-        case ID3FID_ENCODEDBY:
-        case ID3FID_LYRICIST:
-        case ID3FID_FILETYPE:
-        case ID3FID_TIME:
-        case ID3FID_CONTENTGROUP:
-        case ID3FID_TITLE:
-        case ID3FID_SUBTITLE:
-        case ID3FID_INITIALKEY:
-        case ID3FID_LANGUAGE:
-        case ID3FID_SONGLEN:
-        case ID3FID_MEDIATYPE:
-        case ID3FID_ORIGALBUM:
-        case ID3FID_ORIGFILENAME:
-        case ID3FID_ORIGLYRICIST:
-        case ID3FID_ORIGARTIST:
-        case ID3FID_ORIGYEAR:
-        case ID3FID_FILEOWNER:
-        case ID3FID_LEADARTIST:
-        case ID3FID_BAND:
-        case ID3FID_CONDUCTOR:
-        case ID3FID_MIXARTIST:
-        case ID3FID_PARTINSET:
-        case ID3FID_PUBLISHER:
-        case ID3FID_TRACKNUM:
-        case ID3FID_RECORDINGDATES:
-        case ID3FID_NETRADIOSTATION:
-        case ID3FID_NETRADIOOWNER:
-        case ID3FID_SIZE:
-        case ID3FID_ISRC:
-        case ID3FID_ENCODERSETTINGS:
-        case ID3FID_YEAR:
-        {
-          char *sText = ID3_GetString(myFrame, ID3FN_TEXT);
-          std::cout << sText << std::endl;
-          delete [] sText;
-          break;
-        }
-        case ID3FID_CONTENTTYPE:
-        {
-          const char* genre_str;
-          int genre_id = 255;
-          char *sText = ID3_GetString(myFrame, ID3FN_TEXT);
-          sscanf(sText, "(%d)", &genre_id);
-          if (genre_id == 255) {
-            genre_str = sText;
-            genre_id = GetNumFromGenre(sText);
-          }
-          else
-            genre_str = GetGenreFromNum(genre_id);
-          std::cout << genre_str << " (" << genre_id << ")" << std::endl;
-          delete [] sText;
-          break;
-        }
-        case ID3FID_USERTEXT:
-        {
-          char 
-            *sText = ID3_GetString(myFrame, ID3FN_TEXT), 
-            *sDesc = ID3_GetString(myFrame, ID3FN_DESCRIPTION);
-          std::cout << "(" << sDesc << "): " << sText << std::endl;
-          delete [] sText;
-          delete [] sDesc;
-          break;
-        }
-        case ID3FID_COMMENT:
-        case ID3FID_UNSYNCEDLYRICS:
-        {
-          char 
-            *sText = ID3_GetString(myFrame, ID3FN_TEXT), 
-            *sDesc = ID3_GetString(myFrame, ID3FN_DESCRIPTION), 
-            *sLang = ID3_GetString(myFrame, ID3FN_LANGUAGE);
-          std::cout << "(" << sDesc << ")[" << sLang << "]: "
-               << sText << std::endl;
-          delete [] sText;
-          delete [] sDesc;
-          delete [] sLang;
-          break;
-        }
-        case ID3FID_WWWAUDIOFILE:
-        case ID3FID_WWWARTIST:
-        case ID3FID_WWWAUDIOSOURCE:
-        case ID3FID_WWWCOMMERCIALINFO:
-        case ID3FID_WWWCOPYRIGHT:
-        case ID3FID_WWWPUBLISHER:
-        case ID3FID_WWWPAYMENT:
-        case ID3FID_WWWRADIOPAGE:
-        {
-          char *sURL = ID3_GetString(myFrame, ID3FN_URL);
-          std::cout << sURL << std::endl;
-          delete [] sURL;
-          break;
-        }
-        case ID3FID_WWWUSER:
-        {
-          char 
-            *sURL = ID3_GetString(myFrame, ID3FN_URL),
-            *sDesc = ID3_GetString(myFrame, ID3FN_DESCRIPTION);
-          std::cout << "(" << sDesc << "): " << sURL << std::endl;
-          delete [] sURL;
-          delete [] sDesc;
-          break;
-        }
-        case ID3FID_INVOLVEDPEOPLE:
-        {
-          // This isn't the right way to do it---will only get first person
-          size_t nItems = myFrame->Field(ID3FN_TEXT).GetNumTextItems();
-          for (size_t nIndex = 1; nIndex <= nItems; nIndex++)
-          {
-            char *sPeople = ID3_GetString(myFrame, ID3FN_TEXT, nIndex);
-            std::cout << sPeople;
-            delete [] sPeople;
-            if (nIndex < nItems)
-            {
-              std::cout << ", ";
-            }
-          }
-          std::cout << std::endl;
-          break;
-        }
-        case ID3FID_PICTURE:
-        {
-          char
-            *sMimeType = ID3_GetString(myFrame, ID3FN_MIMETYPE),
-            *sDesc     = ID3_GetString(myFrame, ID3FN_DESCRIPTION),
-            *sFormat   = ID3_GetString(myFrame, ID3FN_IMAGEFORMAT);
-          size_t
-            nPicType   = myFrame->Field(ID3FN_PICTURETYPE).Get(),
-            nDataSize  = myFrame->Field(ID3FN_DATA).Size();
-          std::cout << "(" << sDesc << ")[" << sFormat << ", "
-               << nPicType << "]: " << sMimeType << ", " << nDataSize
-               << " bytes" << std::endl;
-          delete [] sMimeType;
-          delete [] sDesc;
-          delete [] sFormat;
-          break;
-        }
-        case ID3FID_GENERALOBJECT:
-        {
-          char 
-          *sMimeType = ID3_GetString(myFrame, ID3FN_MIMETYPE), 
-          *sDesc = ID3_GetString(myFrame, ID3FN_DESCRIPTION), 
-          *sFileName = ID3_GetString(myFrame, ID3FN_FILENAME);
-          size_t nDataSize = myFrame->GetField(ID3FN_DATA)->Size();
-          std::cout << "(" << sDesc << ")[" 
-               << sFileName << "]: " << sMimeType << ", " << nDataSize
-               << " bytes" << std::endl;
-          delete [] sMimeType;
-          delete [] sDesc;
-          delete [] sFileName;
-          break;
-        }
-        case ID3FID_UNIQUEFILEID:
-        {
-          char *sOwner = ID3_GetString(myFrame, ID3FN_OWNER);
-          size_t nDataSize = myFrame->Field(ID3FN_DATA).Size();
-          std::cout << sOwner << ", " << nDataSize
-               << " bytes" << std::endl;
-          delete [] sOwner;
-          break;
-        }
-        case ID3FID_PLAYCOUNTER:
-        {
-          size_t nCounter = myFrame->Field(ID3FN_COUNTER).Get();
-          std::cout << nCounter << std::endl;
-          break;
-        }
-        case ID3FID_POPULARIMETER:
-        {
-          char *sEmail = ID3_GetString(myFrame, ID3FN_EMAIL);
-          size_t
-            nCounter = myFrame->Field(ID3FN_COUNTER).Get(),
-            nRating = myFrame->Field(ID3FN_RATING).Get();
-          std::cout << sEmail << ", counter=" 
-               << nCounter << " rating=" << nRating;
-          delete [] sEmail;
-          break;
-        }
-        case ID3FID_CRYPTOREG:
-        case ID3FID_GROUPINGREG:
-        {
-          char *sOwner = ID3_GetString(myFrame, ID3FN_OWNER);
-          size_t 
-            nSymbol = myFrame->Field(ID3FN_ID).Get(),
-            nDataSize = myFrame->Field(ID3FN_DATA).Size();
-          std::cout << "(" << nSymbol << "): " << sOwner
-               << ", " << nDataSize << " bytes";
-          break;
-        }
-        case ID3FID_AUDIOCRYPTO:
-        case ID3FID_EQUALIZATION:
-        case ID3FID_EVENTTIMING:
-        case ID3FID_CDID:
-        case ID3FID_MPEGLOOKUP:
-        case ID3FID_OWNERSHIP:
-        case ID3FID_PRIVATE:
-        case ID3FID_POSITIONSYNC:
-        case ID3FID_BUFFERSIZE:
-        case ID3FID_VOLUMEADJ:
-        case ID3FID_REVERB:
-        case ID3FID_SYNCEDLYRICS:
-        case ID3FID_SYNCEDTEMPO:
-        case ID3FID_METACRYPTO:
-        {
-          std::cout << " (unimplemented)" << std::endl;
-          break;
-        }
-        default:
-        {
-          std::cout << " frame" << std::endl;
-          break;
-        }
+const void showFrame(const UserUrlLinkFrame *frame) {
+  cout << "(" << frame->description() << "): " << frame->url();
+}
+
+const void showFrame(const AttachedPictureFrame *frame) {
+  ByteVector data = frame->picture();
+  // TODO: taglib doesn't seem to know the format field. figure out why.
+  String format = "";
+
+  cout << "(" << frame->description() << ")[" << format << ", " <<
+	frame->type() << "]: " << frame->mimeType() << ", " << data.size() <<
+	" bytes";
+}
+
+const void showFrame(const GeneralEncapsulatedObjectFrame *frame) {
+  ByteVector data = frame->object();
+
+  cout << "(" << frame->description() << ")[" << frame->fileName() << "]: " <<
+	frame->mimeType() << ", " << data.size() << " bytes";
+}
+
+const void showFrame(const PopularimeterFrame *frame) {
+  // TODO: test this
+  String email = frame->email();
+  unsigned int counter = frame->counter();
+  int rating = frame->rating();
+
+  cout << email << ", counter=" << counter << " rating=" << rating;
+}
+
+const void showFrame(const UserTextIdentificationFrame *frame) {
+  String desc;
+  String text;
+
+  StringList strings = frame->fieldList();
+  List<String>::Iterator iter;
+
+  // It seems taglib doesn't allow direct access to the text itself.
+  // We therefore iterate over all available strings
+  //
+  // Also, if only 1 string is present, it must be the text since the
+  // description *can* be empty while the text cannot.
+  int index = 0;
+
+  for (iter=strings.begin(); iter != strings.end(); ++iter) {
+    index++;
+    if (iter == strings.begin()) {
+      desc = *iter;
+    } else {
+      text = *iter;
+      if (text == "") {
+	text = desc;
+        desc = "";
       }
     }
   }
-  if(firstLine)
+  cout << "(" << desc << "): " << text;
+}
+
+// Maybe the TIPL (ex IPLS, "Involved people list") frame should also get
+// special treatment (it's a TextIdentificationFrame) [TODO]
+const void showFrame(const TextIdentificationFrame *frame) {
+  String text = frame->toString();
+
+  if (frame->frameID() == "TCON") {
+    int genre_id;
+
+    if (text.toInt() || (text == "0")) { // 0 is also a valid genre
+      genre_id = text.toInt();
+      text = ID3v1::genre(genre_id);
+    } else {
+      genre_id = ID3v1::genreIndex(frame->toString());
+    }
+    cout << text << " (" << genre_id << ")";
+  } else {
+    cout << text;
+  }
+}
+
+const void showFrame(const PrivateFrame *frame) {
+  // TODO: test this
+  cout << frame->toString();
+}
+
+// Frames that used to work but are not currently supported by taglib:
+// - PCNT (Play Count)
+// - USER (Terms of Use)
+// - ENCR (Encryption method registration)
+// - GRID (Group identification registration)
+const void showFrame(const UnknownFrame *frame) {
+  ByteVector frameID = frame->frameID();
+
+  if (frameID == "PCNT") {
+    // this one is trivial
+    cout << frame->data().toUInt();
+  } else {
+    cout << "(unimplemented)";
+  }
+}
+
+int PrintInformation(char *sFileName, int rfc822)
+{
+  MPEG::File f(sFileName, false); // false -> don't complain about non-MPEGs
+  ID3v2::Tag *tag = f.ID3v2Tag();
+
+  FrameList frames = tag->frameList();
+
+  if (frames.size() < 1)
     return 1;
+
+  Header *header = tag->header();
+  unsigned int version = header->majorVersion();
+  unsigned int revision = header->revisionNumber();
+
+  if (rfc822)
+    std::cout << "\nFilename: " << sFileName << std::endl;
+  else
+    cout << "id3v2 tag info for " << sFileName << " (v2." << version << "." <<
+        revision << "):" << endl;
+
+  FrameList::ConstIterator iter;
+  for(iter = frames.begin(); iter != frames.end(); ++iter)
+  {
+    Frame *frame = *iter;
+
+    ByteVector frameID = frame->frameID();
+
+    if (rfc822)
+      cout << frameID << ": ";
+    else
+      cout << frameID << " (" << GetDescription(frameID) << "): ";
+
+    if (UserTextIdentificationFrame *ut =
+          	    dynamic_cast<UserTextIdentificationFrame*>(frame))
+      showFrame(ut);
+    else if (TextIdentificationFrame *ti =
+          	    dynamic_cast<TextIdentificationFrame*>(frame))
+      showFrame(ti);
+    else if (CommentsFrame *cf =
+          	    dynamic_cast<CommentsFrame*>(frame))
+      showFrame(cf);
+    else if (UnsynchronizedLyricsFrame *lf =
+          	    dynamic_cast<UnsynchronizedLyricsFrame*>(frame))
+      showFrame(lf);
+    else if (UserUrlLinkFrame *uf =
+          	    dynamic_cast<UserUrlLinkFrame*>(frame))
+      showFrame(uf);
+    else if (UrlLinkFrame *uf =
+          	    dynamic_cast<UrlLinkFrame*>(frame))
+      showFrame(uf);
+    else if (AttachedPictureFrame *pf =
+          	    dynamic_cast<AttachedPictureFrame*>(frame))
+      showFrame(pf);
+    else if (GeneralEncapsulatedObjectFrame *gf =
+          	    dynamic_cast<GeneralEncapsulatedObjectFrame*>(frame))
+      showFrame(gf);
+    else if (PopularimeterFrame *pf =
+      	            dynamic_cast<PopularimeterFrame*>(frame))
+      showFrame(pf);
+    else if (UnknownFrame *uf =
+		    dynamic_cast<UnknownFrame*>(frame))
+      showFrame(uf);
+    else if (PrivateFrame *pf =
+		    dynamic_cast<PrivateFrame*>(frame))
+      showFrame(pf);
+    else {
+      cout << frame->frameID() << " (----): " << frame->toString();
+    }
+    cout << endl;
+  }
   
   return 0;
 }
@@ -355,8 +316,8 @@ int PrintID3v1Tag(char *sFileName)
             id3v1tag.title, id3v1tag.artist);
     printf("Album  : %-30.30s  Year: %-4.4s, Genre: %s (%d)\n",
             id3v1tag.album, id3v1tag.year, 
-            (id3v1tag.genre < GetGenreCount())
-            ? GetGenreFromNum(id3v1tag.genre) : 
+            (id3v1tag.genre < ID3v1::genreList().size())
+            ? ID3v1::genre(id3v1tag.genre).toCString() : 
             "Unknown", id3v1tag.genre);
     if (!id3v1tag.comment[28])
       printf("Comment: %-28.28s    Track: %d\n", 
@@ -373,11 +334,12 @@ int PrintID3v1Tag(char *sFileName)
 
 void ListTag(int argc, char *argv[], int optind, int rfc822)
 {
-  int ret;
-  for (size_t nIndex = optind; nIndex < argc; nIndex++)
+  int ret = 0;
+
+  for (int nIndex = optind; nIndex < argc; nIndex++)
   {
-    bool tags = false;
-    ID3_Tag myTag;
+    bool id3v1_tag = false;
+    bool id3v2_tag = false;
 
     if (!rfc822)
     {
@@ -388,14 +350,21 @@ void ListTag(int argc, char *argv[], int optind, int rfc822)
       }
       else if(ret == 0)
       {
-        tags = true;
+        id3v1_tag = true;
       }
     }
-    myTag.Link(argv[nIndex], ID3TT_ID3V2);
-    if(!PrintInformation(argv[nIndex],myTag,rfc822))
-      tags = true;
-    if(!tags)
+    if(!PrintInformation(argv[nIndex], rfc822))
+      id3v2_tag = true;
+    if(!id3v1_tag && !id3v2_tag)
       std::cout << argv[nIndex] << ": No ID3 tag" << std::endl;
+    else {
+      if (!id3v1_tag && !rfc822)
+        std::cout << argv[nIndex] << ": No ID3v1 tag" << std::endl;
+      if (!id3v2_tag)
+        std::cout << argv[nIndex] << ": No ID3v2 tag" << std::endl;
+    }
+    id3v1_tag = false;
+    id3v2_tag = false;
   }
 
   return;

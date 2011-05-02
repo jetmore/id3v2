@@ -8,6 +8,7 @@
 #include <id3/tag.h>
 #include <getopt.h>
 #include <id3/misc_support.h>
+#include <taglib/id3v1genres.h>
 #ifdef WIN32
 #include <io.h>
 #define snprintf _snprintf
@@ -16,14 +17,14 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
-#include "genre.h"
-
 #define MAXNOFRAMES 1000
 
 #define TMPSIZE 255    
 
 /* Write both tags by default */
 flags_t UpdFlags = ID3TT_ALL;
+
+using namespace TagLib;
 
 void PrintUsage(char *sName)
 {
@@ -64,7 +65,9 @@ void PrintVersion(char *sName)
 {
   size_t nIndex;
   std::cout << sName << " " << VERSION << std::endl;
-  std::cout << "Uses " << ID3LIB_FULL_NAME << std::endl << std::endl;
+  std::cout << "Uses " << ID3LIB_FULL_NAME << " and taglib-" <<
+      TAGLIB_MAJOR_VERSION << "." << TAGLIB_MINOR_VERSION << "." <<
+      TAGLIB_PATCH_VERSION << std::endl << std::endl;
 
   std::cout << "This program adds/modifies/removes/views id3v2 tags, " << std::endl 
        << "and can convert from id3v1 tags" << std::endl;
@@ -287,7 +290,7 @@ int main( int argc, char *argv[])
                 char *genre_str;
                 sscanf(optarg, "%d", &genre_id);
                 if (genre_id == 255)
-                    genre_id = GetNumFromGenre(optarg);
+                    genre_id = ID3v1::genreIndex(optarg);
                 if (genre_id == 255)
                     genre_str = optarg;
                 else {

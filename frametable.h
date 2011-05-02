@@ -104,11 +104,29 @@ static struct frameTbl frameTable[] = {
   { "WPAY", ID3FID_WWWPAYMENT,        "Payment" },
   { "WPUB", ID3FID_WWWPUBLISHER,      "Official publisher webpage" },
   { "WXXX", ID3FID_WWWUSER,           "User defined URL link" },
+  { "ASPI", ID3FID_NOFRAME,           "Audio seek point index" },
+  { "EQU2", ID3FID_NOFRAME,           "Equalisation" },
+  { "RVA2", ID3FID_NOFRAME,           "Relative volume adjustment" },
+  { "SEEK", ID3FID_NOFRAME,           "Seek frame" },
+  { "SIGN", ID3FID_NOFRAME,           "Signature frame" },
+  { "TDEN", ID3FID_NOFRAME,           "Encoding time" },
+  { "TDOR", ID3FID_NOFRAME,           "Original release time" },
+  { "TDRC", ID3FID_NOFRAME,           "Recording time" },
+  { "TDRL", ID3FID_NOFRAME,           "Release time" },
+  { "TDTG", ID3FID_NOFRAME,           "Tagging time" },
+  { "TIPL", ID3FID_NOFRAME,           "Involved people list" },
+  { "TMCL", ID3FID_NOFRAME,           "Musician credits list" },
+  { "TMOO", ID3FID_NOFRAME,           "Mood" },
+  { "TPRO", ID3FID_NOFRAME,           "Produced notice" },
+  { "TSOA", ID3FID_NOFRAME,           "Album sort order" },
+  { "TSOP", ID3FID_NOFRAME,           "Performer sort order" },
+  { "TSOT", ID3FID_NOFRAME,           "Title sort order" },
+  { "TSST", ID3FID_NOFRAME,           "Set subtitle" },
   { "    ", ID3FID_METACRYPTO,        "Encrypted meta frame" },
   { "????", ID3FID_NOFRAME,           "Error" }
 };
 
-int frameTableCount = 75;
+int frameTableCount = 93;
 
 
 #endif /* __FRAMETABLE_H__ */
