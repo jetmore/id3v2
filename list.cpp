@@ -55,11 +55,12 @@ const char *GetDescription(ByteVector frameID)
 
 void PrintFrameHelp(char *sName)
 {
-    // TODO: don't show frames with ID3FID_NOFRAME
     for(int ii = 0; ii < frameTableCount - 1; ii++ )
     {
-      cout << "    --" << frameTable[ii].frameName << "    " 
-           << frameTable[ii].frameLongName << endl;
+      if (frameTable[ii].frameID != ID3FID_NOFRAME) {
+        cout << "    --" << frameTable[ii].frameName << "    "
+             << frameTable[ii].frameLongName << endl;
+      }
     }
     return;
 }
