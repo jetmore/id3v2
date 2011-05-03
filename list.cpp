@@ -27,6 +27,7 @@
 
 #include <taglib/taglib.h>
 #include <taglib/id3v1genres.h>
+#include <taglib/id3v1tag.h>
 #include <taglib/mpegfile.h>
 #include <taglib/id3v2tag.h>
 
@@ -332,6 +333,54 @@ int PrintID3v1Tag(char *sFileName)
   }
   return 0;
 }
+
+// This reimplements PrintID3v1Tag based on taglib. Current versions of taglib
+// do however suffer from a bug that makes this code worse than the 'manual'
+// way above (see comment below for details).
+//
+// It's here for completeness' sake though (and because the bug might be fixed
+// in future versions)
+/*
+int PrintID3v1TagNEW(char *sFileName)
+{
+  MPEG::File f(sFileName);
+
+  if (!f.isValid()) {
+    perror("id3v2");
+    return -1;
+  }
+
+  ID3v1::Tag *tag = f.ID3v1Tag();
+
+  // this doesn't work atm, bug in taglib:
+  // - https://bugs.kde.org/show_bug.cgi?id=168633
+  // - https://bugs.kde.org/show_bug.cgi?id=214249
+  if (!tag)
+    return 1;
+
+  String artist = tag->artist();
+  String title = tag->title();
+  String album = tag->album();
+  String year = String::number(tag->year());
+  String genre = tag->genre();
+  String comment = tag->comment();
+  int genreID = ID3v1::genreIndex(genre);
+  int track = tag->track();
+
+  if (genre == "")
+    genre = "Unknown";
+  if (year == "0")
+    year = "";
+
+  std::cout << "id3v1 tag info for " << sFileName << ":" << std::endl;
+  printf("Title  : %-30.30s  Artist: %-30.30s\n",
+          title.toCString(), artist.toCString());
+  printf("Album  : %-30.30s  Year: %-4.4s, Genre: %s (%d)\n",
+          album.toCString(), year.toCString(), genre.toCString(), genreID);
+  printf("Comment: %-28.28s    Track: %d\n", comment.toCString(), track);
+
+  return 0;
+}*/
 
 void ListTag(int argc, char *argv[], int optind, int rfc822)
 {
