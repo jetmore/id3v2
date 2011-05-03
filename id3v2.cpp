@@ -7,8 +7,13 @@
 #include <cstring>
 #include <id3/tag.h>
 #include <getopt.h>
-#include <id3/misc_support.h>
+#include <taglib/mpegfile.h>
 #include <taglib/id3v1genres.h>
+#include <taglib/id3v1tag.h>
+#include <taglib/id3v2tag.h>
+
+#include <taglib/commentsframe.h>
+#include <taglib/textidentificationframe.h>
 #ifdef WIN32
 #include <io.h>
 #define snprintf _snprintf
@@ -21,10 +26,12 @@
 
 #define TMPSIZE 255    
 
-/* Write both tags by default */
-flags_t UpdFlags = ID3TT_ALL;
-
 using namespace TagLib;
+using namespace ID3v2;
+
+/* Write both tags by default */
+flags_t UpdFlags = MPEG::File::AllTags;
+
 
 void PrintUsage(char *sName)
 {
@@ -61,6 +68,26 @@ void PrintUsage(char *sName)
 }
 
 
+StringList split(String subject, unsigned int num) {
+  StringList list = StringList();
+  String current = subject;
+
+  while (num-- > 0) {
+    int pos = current.find(":");
+    if (num == 0) {
+      list.append(current);
+    } else if (pos > -1) {
+      list.append(current.substr(0, pos));
+      current = current.substr(pos + 1);
+    } else {
+      list.append(current);
+      current = String::null;
+    }
+  }
+
+  return list;
+}
+
 void PrintVersion(char *sName)
 {
   size_t nIndex;
@@ -81,25 +108,31 @@ extern void PrintGenreList();
 extern void DeleteTag(int argc, char *argv[], int optind, int whichTags); 
 extern void ConvertTag(int argc, char *argv[], int optind);
 
-#ifdef SORT_RUNTIME
-extern void InitGenres();
-#endif  // SORT_RUNTIME
+//#ifdef SORT_RUNTIME
+//extern void InitGenres();
+//#endif  // SORT_RUNTIME
 
 int main( int argc, char *argv[])
 {
   int iOpt;
   int argCounter = 0;
-  int ii;
+  //int ii;
   char tmp[TMPSIZE];
-  FILE * fp;
+  //FILE * fp;
   
-  struct frameInfo {
-    enum ID3_FrameID id;
-    char *data;
-  } frameList[MAXNOFRAMES];
+  // TODO: REMOVE THIS
+  //struct frameInfo {
+  //  enum ID3_FrameID id;
+  //  char *data;
+  //} frameList[MAXNOFRAMES];
   
-  int frameCounter = 0;
+  //int frameCounter = 0;
+  // TODO: END
   
+  Map<String, String> *vals = new Map<String, String>();
+  ID3v1::Tag* v1tag = new ID3v1::Tag();
+  ID3v2::Tag* v2tag = new ID3v2::Tag();
+
   while (true)
   {
     int option_index = 0;
@@ -234,9 +267,10 @@ int main( int argc, char *argv[])
     switch (iOpt)
     {
       case 0:
-                frameList[frameCounter].id   = (enum ID3_FrameID)optFrameID;
-                frameList[frameCounter].data = optarg;
-                frameCounter++;
+                // TODO
+                //frameList[frameCounter].id   = (enum ID3_FrameID)optFrameID;
+                //frameList[frameCounter].data = optarg;
+                //frameCounter++;
                 break;
       case '?': 
       case 'h': PrintUsage(argv[0]);    exit (0);
@@ -258,31 +292,23 @@ int main( int argc, char *argv[])
       case 'C': ConvertTag(argc, argv, optind);    
                                         exit (0);
       case '1':
-		UpdFlags = ID3TT_ID3V1;
+		UpdFlags = MPEG::File::ID3v1;
 		break;
       case '2':
-		UpdFlags = ID3TT_ID3V2;
+		UpdFlags = MPEG::File::ID3v2;
 		break;
     // Tagging stuff 
       case 'a': 
-                frameList[frameCounter].id   = ID3FID_LEADARTIST;
-                frameList[frameCounter].data = optarg;
-                frameCounter++;
+                vals->insert("TPE1", optarg);
                 break;
       case 'A': 
-                frameList[frameCounter].id   = ID3FID_ALBUM;
-                frameList[frameCounter].data = optarg;
-                frameCounter++;
+	        vals->insert("TALB", optarg);
                 break;
       case 't': 
-                frameList[frameCounter].id   = ID3FID_TITLE;
-                frameList[frameCounter].data = optarg;
-                frameCounter++;
+                vals->insert("TIT2", optarg);
                 break;
       case 'c': 
-                frameList[frameCounter].id   = ID3FID_COMMENT;
-                frameList[frameCounter].data = optarg;
-                frameCounter++;
+                vals->insert("COMM", optarg);
                 break;
       case 'g': 
           {
@@ -297,20 +323,14 @@ int main( int argc, char *argv[])
                     sprintf(tmp, "(%d)", genre_id);
                     genre_str = tmp;
                 }
-                frameList[frameCounter].id   = ID3FID_CONTENTTYPE;
-                frameList[frameCounter].data = genre_str;
-                frameCounter++;
+                vals->insert("TCON", genre_str);
           }
                 break;
       case 'y': 
-                frameList[frameCounter].id   = ID3FID_YEAR;
-                frameList[frameCounter].data = optarg;
-                frameCounter++;
+                vals->insert("TDRC", optarg);
                 break;
       case 'T': 
-                frameList[frameCounter].id   = ID3FID_TRACKNUM;
-                frameList[frameCounter].data = optarg;
-                frameCounter++;
+                vals->insert("TRCK", optarg);
                 break;
     // other tags
     
@@ -318,8 +338,103 @@ int main( int argc, char *argv[])
 		std::cerr << "This isn't supposed to happen" << std::endl;
                 exit(1);
     }
+/*    FrameList frames = t->frameList();
+
+    FrameList::ConstIterator iter;
+    for(iter = frames.begin(); iter != frames.end(); ++iter)
+    {
+      Frame *frame = *iter;
+      cout << frame->frameID() << "=" << frame->toString() << endl;
+    }*/
+  }
+
+  // loop thru the files
+  if (optind == argc)
+  {
+	  std::cerr << "No file to work on." << std::endl;
+    exit(1);
   }
   
+  // set v2
+  for (size_t nIndex = optind; (unsigned int) nIndex < argc; nIndex++)
+  {
+    MPEG::File f(argv[nIndex]);
+
+    ID3v1::Tag *tag1 = f.ID3v1Tag(true); // create if none
+    ID3v2::Tag *tag2 = f.ID3v2Tag(true); // create if none
+
+    // id3v1
+    Map<String, String>::Iterator iter1;
+    String key;
+
+    for(iter1 = vals->begin(); iter1 != vals->end(); ++iter1)
+    {
+      key = (*iter1).first;
+      if (key == "TPE1") {
+        tag1->setArtist((*iter1).second);
+        tag2->setArtist((*iter1).second);
+      } else if (key == "TALB") {
+        tag1->setAlbum((*iter1).second);
+        tag2->setAlbum((*iter1).second);
+      } else if (key == "TIT2") {
+        tag1->setTitle((*iter1).second);
+        tag2->setTitle((*iter1).second);
+      } else if (key == "COMM") { //TODO
+
+        StringList s = split((*iter1).second, 3);
+        CommentsFrame *f;
+
+        FrameList oldframes = tag2->frameList("COMM");
+	if (oldframes.isEmpty())
+	  f = new CommentsFrame();
+	else
+	  f = dynamic_cast<CommentsFrame*>(oldframes.front());
+
+        f->setDescription(s[0]);
+        f->setText(s[1]);
+        f->setLanguage(ByteVector(s[2].toCString()));
+
+        tag1->setComment(s[1]);
+      } else if (key == "TCON") {
+        tag1->setGenre((*iter1).second);
+        tag2->setGenre((*iter1).second);
+      } else if (key == "TDRC") {
+        int year = (*iter1).second.toInt();
+        tag1->setYear(year);
+        tag2->setYear(year);
+      } else if (key == "TRCK") {
+        int track = (*iter1).second.toInt();
+        tag1->setTrack(track);
+        tag2->setTrack(track);
+      }
+    }
+
+    // TODO: add 'generic' frames. Some code:
+    // Frame *f = new TextIdentificationFrame("TRCK");
+    // f->setText(optarg);
+    // v2tag->addFrame(f);
+
+/*    const FrameList frames = v2tag->frameList();
+    FrameList::ConstIterator iter, iter2;
+
+    for(iter = frames.begin(); iter != frames.end(); ++iter)
+    {
+      Frame *frame = *iter;
+      FrameList oldframes = tag2->frameList(frame->frameID());
+
+      if (oldframes.isEmpty())
+        tag2->addFrame(frame);
+      else {
+	Frame *upd = oldframes.front();
+	upd->setData(frame->render());
+      }
+    }*/
+
+    f.save(UpdFlags, false); // don't strip tags that are not included
+  }
+  return 0;
+
+#ifdef THIS_NEVER_HAPPENS
   // loop thru the files
   if (optind == argc) 
   {
@@ -716,4 +831,5 @@ int main( int argc, char *argv[])
   }
 
   return 0;
+#endif
 }
