@@ -595,29 +595,35 @@ int main( int argc, char *argv[])
         case ID3FID_COMMENT:
         case ID3FID_UNSYNCEDLYRICS:
         {
-          // split the string at the ':' remember if no : then leave
-          // descrip/lang empty
-          char *text;
-          text = strchr(frameList[ii].data, ':');
-          if (text == NULL) 
-          {
-            myFrame->Field(ID3FN_TEXT) = frameList[ii].data;
-          } else {
-         	*text = '\0';
-          	text++;
-          	char *lang;
-          	lang = strchr(text, ':');
-          	if (lang == NULL) 
-          	{
-          	  myFrame->Field(ID3FN_DESCRIPTION) = frameList[ii].data;
-          	  myFrame->Field(ID3FN_TEXT) = text;
-          	} else {
-          	  *lang = '\0';
-          	  lang++;
-          	  myFrame->Field(ID3FN_DESCRIPTION) = frameList[ii].data;
-              myFrame->Field(ID3FN_TEXT) = text;
-              myFrame->Field(ID3FN_LANGUAGE) = lang;
+          // split the string at the ':' (ignoring "\:" and splitting into no more than 3 pieces
+          // remember if no ':' then leave descrip/lang empty
+          char *pieces[3] = { frameList[ii].data, NULL, NULL };
+          if (strchr(frameList[ii].data, ':')) {
+            size_t read_at = 0, inst_at = 0, piece = 0;
+            unsigned int olen = strlen(frameList[ii].data);
+            for (read_at = 0; read_at < olen; read_at++, inst_at++) {
+              if (frameList[ii].data[read_at] == '\\' && frameList[ii].data[read_at+1] == ':') {
+                read_at++;
+              }
+              else if (frameList[ii].data[read_at] == ':' && piece < 2) {
+                frameList[ii].data[read_at] = '\0';
+                pieces[++piece] = frameList[ii].data + inst_at + 1;
+              }
+              frameList[ii].data[inst_at] = frameList[ii].data[read_at];
             }
+            frameList[ii].data[inst_at] = '\0';
+          }
+          // fprintf(stdout, "1: %s, 2: %s, 3: %s\n", pieces[0], pieces[1], pieces[2]);
+          
+          if (pieces[1] == NULL) {
+            myFrame->Field(ID3FN_TEXT) = pieces[0];
+          } else if (pieces[2] == NULL) {
+            myFrame->Field(ID3FN_DESCRIPTION) = pieces[0];
+            myFrame->Field(ID3FN_TEXT) = pieces[1];
+          } else {
+            myFrame->Field(ID3FN_DESCRIPTION) = pieces[0];
+            myFrame->Field(ID3FN_TEXT) = pieces[1];
+            myFrame->Field(ID3FN_LANGUAGE) = pieces[2];
           }
           /* debug
           std::cout << ID3_GetString(myFrame, ID3FN_DESCRIPTION) << std::endl
